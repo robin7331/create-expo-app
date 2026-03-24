@@ -320,3 +320,40 @@ tools/
 # Documentation
 docs/
 ```
+
+## .claude/settings.local.json
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Bash(git:*)",
+      "Bash(git add:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm list:*)",
+      "Bash(npm view:*)",
+      "Bash(npx expo:*)",
+      "Bash(npx eas-cli:*)",
+      "Bash(npx create-expo-app:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx jest:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npx skills:*)",
+      "Bash(node:*)",
+      "Bash(gh issue:*)",
+      "Bash(gh repo:*)",
+      "Bash(gh api:*)",
+      "Bash(ls:*)",
+      "Bash(wc:*)",
+      "Bash(du:*)",
+      "Bash(chmod:*)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "WebSearch"
+    ]
+  }
+}
+```

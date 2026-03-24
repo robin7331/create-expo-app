@@ -17,7 +17,6 @@ Generate a CLAUDE.md for the new project using this template. Replace all `{PLAC
 - **MMKV** — Encrypted local storage
 - **Jest + React Testing Library** — Unit testing
 {IF_IAP:- **RevenueCat** — In-app purchases and subscriptions}
-{IF_PUSH:- **Expo Notifications** — Push notifications}
 
 ## What: Project Structure
 
@@ -27,7 +26,7 @@ src/
 ├── features/         # Feature modules (screens, components, API hooks per feature)
 ├── components/       # Shared UI components
 ├── hooks/            # Shared custom React hooks
-├── lib/              # Pre-configured utilities (query, storage, cn)
+├── lib/              # Pre-configured utilities (query, storage, cn{IF_LARAVEL:, api})
 └── global.css        # TailwindCSS + Uniwind configuration & design tokens
 
 Root Files:
@@ -60,7 +59,40 @@ npm run build:production:local # Local production build
 npm run submit:ios             # Submit .ipa to App Store Connect
 ```
 
-{IF_BACKEND:
+{IF_LARAVEL:
+## What: Backend API (Laravel)
+
+This app communicates with a Laravel backend located at `../{BACKEND_SLUG}/`.
+
+### Cross-Project Workflows
+
+- When asked to "check the backend", "look at the backend code", or "check the API", navigate to `../{BACKEND_SLUG}/`.
+- When asked to "create a GitHub issue in the backend" or "create an issue for the backend", run `gh issue create` from within the `../{BACKEND_SLUG}/` directory.
+- When asked about "the backend" or "the API", this refers to the Laravel project at `../{BACKEND_SLUG}/`.
+
+### API Contract
+
+The file `../{BACKEND_SLUG}/docs/api-specs.md` is the **single source of truth** for the API contract. When implementing new API calls, always reference this file for endpoint URLs, request/response formats, and authentication requirements.
+
+When asked about "api specs" or "the API contract", this refers to `../{BACKEND_SLUG}/docs/api-specs.md`.
+
+### API Base URL
+
+- Development: `http://{BACKEND_SLUG}.test` (Laravel Herd)
+- Configured in `env.ts` as `API_URL`
+
+### Authentication
+
+{IF_SANCTUM:The app authenticates via Sanctum API tokens. The token is stored in MMKV and attached as a `Bearer` token to all requests via `src/lib/api.ts`. Auth logic lives in `src/features/auth/`.}
+
+### Conventions
+
+- **snake_case on the wire**: The backend uses snake_case. Map to camelCase at the API boundary in `src/features/`
+- **API client**: All requests go through `src/lib/api.ts` which handles auth tokens and error parsing
+- **Response types**: Define response types in the relevant feature's `types.ts` file
+}
+
+{IF_BACKEND_NO_LARAVEL:
 ## What: Backend API
 
 The app communicates with a backend API at `{API_URL}`.

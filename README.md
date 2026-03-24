@@ -1,12 +1,16 @@
 # create-expo-app
 
-Scaffold a production-ready React Native Expo app with a modern stack in one command.
+An opinionated [Agent Skill](https://agentskills.io/) for **Expo + Laravel** developers. Scaffold a production-ready React Native app — optionally paired with a Laravel backend — in one command.
 
-An [Agent Skill](https://agentskills.io/) for AI coding agents (Claude Code, Cursor, Gemini CLI, Codex, and more).
+Built for AI coding agents (Claude Code, Cursor, Gemini CLI, Codex, and more).
+
+## Why Opinionated?
+
+This skill makes choices so you don't have to. It's built for developers who love **Laravel** on the backend and **Expo** on the frontend. If that's your stack, everything is wired up and ready to ship. If you don't need a backend, the Expo app stands on its own.
 
 ## What It Does
 
-This skill walks you through an interactive setup, then scaffolds a complete Expo project with everything wired up and ready to ship:
+### Expo App (always)
 
 - **Tailwind CSS v4** via Uniwind + **HeroUI Native** component library
 - **Zustand** + **React Query** + **MMKV** for state and storage
@@ -18,11 +22,19 @@ This skill walks you through an interactive setup, then scaffolds a complete Exp
 - Utility scripts (image optimization, env syncing)
 - Project-level agent skills auto-installed
 
-### Optional integrations (asked during setup)
+### Laravel Backend (optional)
+
+- **Laravel with React starter kit** — Inertia + React admin dashboard + Fortify auth
+- **Sanctum API tokens** — mobile app auth that works out of the box
+- **Pulse** (monitoring) + **Telescope** (debugging) wired into the admin sidebar
+- **Laravel Boost** — AI-powered guidelines, skills, and MCP servers
+- **`docs/api-specs.md`** — single source of truth for the API contract
+- **Working login** — launch the simulator, sign in with `test@example.com` / `password`
+- **Cross-project AI awareness** — say "check the backend" or "create an issue in the app" and the AI knows exactly where to go
+
+### Optional Integrations
 
 - **RevenueCat** — in-app purchases and subscriptions
-- **Expo Notifications** — push notifications
-- **Backend API** — env config and API client scaffolding
 
 ## Installation
 
@@ -44,31 +56,35 @@ Or just ask naturally:
 Create a new Expo app
 ```
 ```
-Scaffold a React Native project for a fitness tracker
+Scaffold a React Native project with a Laravel backend
 ```
 ```
 Start a new mobile app called "My App"
 ```
 
-The skill will ask you a series of questions:
+## Interactive Questions
 
 1. **App name** — e.g., "My Cool App"
 2. **Bundle ID** — suggested from the name, or specify your own
-3. **In-app purchases?** — installs RevenueCat if yes
-4. **Push notifications?** — installs expo-notifications if yes
-5. **Backend API?** — configures env and API URL if yes
-6. **Design vibe** — generates a color palette, tokens, and brand voice
+3. **Laravel backend?** — scaffolds a companion Laravel project
+   - Backend name (default: `{slug}-backend`)
+   - Sanctum API tokens for mobile auth (default: yes)
+   - Pulse & Telescope (default: both)
+4. **In-app purchases?** — installs RevenueCat if yes
+5. **Design vibe** — generates a color palette, tokens, and brand voice
 
-Then it scaffolds everything into a new directory and you're ready to `npm start`.
+Then it scaffolds everything and you're ready to `npm start`.
 
 ## What Gets Created
+
+### Without Laravel Backend
 
 ```
 my-cool-app/
 ├── src/
 │   ├── app/              # Expo Router file-based routes
 │   │   ├── _layout.tsx   # Provider hierarchy (wired up)
-│   │   └── index.tsx     # 🚀 Ship! starter screen
+│   │   └── index.tsx     # Starter screen
 │   ├── features/         # Feature modules go here
 │   ├── components/       # Shared components
 │   ├── hooks/            # Custom hooks
@@ -80,31 +96,72 @@ my-cool-app/
 ├── scripts/
 │   ├── sync-production-env.sh
 │   └── optimize-images.sh
-├── assets/images/        # App icons (from Expo template)
-├── app.config.ts         # Expo config (plugins, experiments)
-├── eas.json              # EAS Build profiles
-├── env.ts                # Typed environment config
-├── metro.config.js       # Uniwind wiring
-├── tsconfig.json         # Strict + path aliases
-├── CLAUDE.md             # AI agent project instructions
-├── DESIGN.md             # Design tokens & brand guidelines
-├── README.md             # Setup & release guide
-├── .gitignore
-└── .easignore
+├── assets/images/
+├── app.config.ts
+├── eas.json
+├── env.ts
+├── metro.config.js
+├── tsconfig.json
+├── CLAUDE.md
+├── DESIGN.md
+└── README.md
+```
+
+### With Laravel Backend
+
+```
+my-cool-app/                    # Expo app
+├── src/
+│   ├── app/
+│   │   ├── _layout.tsx         # Auth-aware provider hierarchy
+│   │   ├── index.tsx           # Home screen
+│   │   └── login.tsx           # Login screen (works out of the box)
+│   ├── features/
+│   │   └── auth/               # Full auth client
+│   │       ├── api.ts          # login / register / logout / getUser
+│   │       ├── store.ts        # Zustand + MMKV auth state
+│   │       └── types.ts        # User, AuthResponse types
+│   ├── lib/
+│   │   ├── api.ts              # Fetch wrapper with Bearer token
+│   │   ├── cn.ts
+│   │   ├── storage.ts
+│   │   └── query.tsx
+│   └── ...
+├── CLAUDE.md                   # References backend at ../{slug}-backend/
+└── ...
+
+my-cool-app-backend/            # Laravel app
+├── app/Http/Controllers/Api/V1/
+│   └── AuthController.php      # Sanctum token auth
+├── routes/
+│   ├── api.php                 # /api/v1/auth/* endpoints
+│   └── web.php                 # Admin dashboard routes
+├── resources/js/components/
+│   ├── app-sidebar.tsx         # Sidebar with Pulse & Telescope
+│   └── nav-footer.tsx          # Footer nav component
+├── .ai/guidelines/
+│   └── companion-app.md        # AI cross-reference to Expo app
+├── docs/
+│   └── api-specs.md            # API contract (source of truth)
+├── AGENTS.md                   # Generated by Laravel Boost
+├── CLAUDE.md                   # Generated by Laravel Boost
+└── ...
 ```
 
 ## Skill Structure
 
 ```
 create-expo-app/
-├── SKILL.md              # Interactive workflow instructions
+├── SKILL.md                            # Interactive workflow instructions
 ├── scripts/
-│   ├── sync-production-env.sh   # Template copied into projects
-│   └── optimize-images.sh       # Template copied into projects
+│   ├── sync-production-env.sh          # Template copied into projects
+│   └── optimize-images.sh              # Template copied into projects
 └── references/
-    ├── wiring-guide.md          # Config file templates
-    ├── CLAUDE-TEMPLATE.md       # CLAUDE.md template
-    └── DESIGN-TEMPLATE.md       # DESIGN.md template
+    ├── wiring-guide.md                 # Expo config file templates
+    ├── laravel-guide.md                # Laravel scaffolding guide
+    ├── auth-guide.md                   # Expo auth client templates
+    ├── CLAUDE-TEMPLATE.md              # CLAUDE.md template
+    └── DESIGN-TEMPLATE.md              # DESIGN.md template
 ```
 
 ## License

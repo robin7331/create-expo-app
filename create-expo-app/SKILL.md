@@ -1,21 +1,22 @@
 ---
 name: create-expo-app
 description: >
-  Scaffold a production-ready React Native Expo app with Tailwind CSS v4 (Uniwind),
-  HeroUI Native, Zustand, React Query, MMKV, and full EAS build config.
-  Use when the user wants to create a new Expo app, start a new React Native project,
-  or scaffold a mobile app. Triggers on: "create expo app", "new react native project",
+  Scaffold a production-ready React Native Expo app with an optional Laravel backend.
+  Opinionated stack: Tailwind CSS v4 (Uniwind), HeroUI Native, Zustand, React Query, MMKV,
+  full EAS build config, and optional Laravel backend with Sanctum API auth, Pulse, Telescope,
+  and Laravel Boost. Use when the user wants to create a new Expo app, start a new React Native
+  project, or scaffold a mobile app. Triggers on: "create expo app", "new react native project",
   "scaffold mobile app", "start a new app", "bootstrap expo project".
 license: MIT
-compatibility: Requires Node.js 18+, npm, and npx. macOS recommended for iOS builds.
+compatibility: Requires Node.js 18+, npm, and npx. macOS recommended for iOS builds. Laravel backend requires PHP 8.2+ and Composer.
 metadata:
   author: robin7331
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
 # Create Expo App
 
-Scaffold a production-ready React Native Expo app with a modern stack in minutes.
+Scaffold a production-ready React Native Expo app — optionally paired with a Laravel backend — in minutes.
 
 ## What This Skill Does
 
@@ -30,6 +31,18 @@ This skill walks you through an interactive setup, then scaffolds a complete Exp
 - Generated **CLAUDE.md**, **DESIGN.md**, and **README.md**
 - Utility scripts for image optimization and env syncing
 - Project-level agent skills (uniwind, heroui-native, react-native, etc.)
+
+### Optional Laravel Backend
+
+If selected, the skill also scaffolds a companion Laravel backend alongside the Expo app:
+
+- **Laravel with React starter kit** (Inertia + React admin dashboard + Fortify auth)
+- **Sanctum API tokens** for mobile app authentication
+- **Laravel Pulse** (monitoring) + **Telescope** (debugging) wired into the admin sidebar
+- **Laravel Boost** with custom AI guidelines for cross-project awareness
+- **`docs/api-specs.md`** — single source of truth for the API contract
+- **Working auth flow** — launch the simulator and log in with `test@example.com` / `password`
+- **Cross-project AI agent references** — say "check the backend" or "create an issue in the app" and the AI knows where to go
 
 ## Interactive Setup Flow
 
@@ -53,26 +66,48 @@ Bundle ID? [{suggested bundle ID}]
 ```
 Use the suggestion if they press enter / say "yes" / confirm.
 
-**Q3: In-App Purchases**
+**Q3: Laravel Backend**
+```
+Do you want a Laravel backend for your app? [y/N]
+```
+
+If yes, ask these follow-up questions:
+
+**Q3a: Backend Name**
+```
+Backend project name: {slug}-backend — OK? [Y/n]
+```
+If they say no, ask for their preferred name. Derive `backendSlug` from this.
+
+**Q3b: Mobile Auth**
+```
+Use Sanctum API tokens for mobile app authentication? [Y/n]
+```
+
+**Q3c: Monitoring Tools**
+```
+Install Pulse (monitoring) and Telescope (debugging)? [Both/Pulse only/Telescope only/Neither] (default: Both)
+```
+
+**Q4: In-App Purchases**
 ```
 Will your app have in-app purchases or subscriptions? [y/N]
 ```
 
-**Q4: Push Notifications**
+**Q5: Design Vibe**
 ```
-Do you need push notifications? [y/N]
+Describe your app's visual vibe in a few words (e.g., "playful kids app", "minimal fitness tracker", "dark premium fintech"):
 ```
 
-**Q5: Backend**
+**NOTE**: If the user chose a Laravel backend in Q3, the "Backend API" question is automatically answered yes with `API_URL` set to `http://{backendSlug}.test` (Laravel Herd). Do NOT ask a separate backend question.
+
+If the user did NOT choose a Laravel backend, ask:
+
+**Q5b: Backend API (non-Laravel only)**
 ```
 Does your app need a backend API? [y/N]
 ```
 If yes, ask for the API base URL (default: `http://localhost:3000`).
-
-**Q6: Design Vibe**
-```
-Describe your app's visual vibe in a few words (e.g., "playful kids app", "minimal fitness tracker", "dark premium fintech"):
-```
 
 ### Step 2: Confirm
 
@@ -85,16 +120,27 @@ Here's what I'll create:
   Slug:         {slug}
   Bundle ID:    {bundleId}
   IAP:          {yes/no}
-  Push:         {yes/no}
-  Backend:      {yes/no} {apiUrl if yes}
   Design vibe:  {vibe}
 
   Directory:    ./{slug}/
+```
 
+If Laravel backend was selected, also show:
+
+```
+  Laravel Backend:
+    Name:       {backendSlug}
+    Directory:  ./{backendSlug}/
+    Auth:       Sanctum API tokens {yes/no}
+    Monitoring: {Both/Pulse/Telescope/Neither}
+    API URL:    http://{backendSlug}.test
+```
+
+```
 Ready to go? [Y/n]
 ```
 
-### Step 3: Scaffold
+### Step 3: Scaffold Expo App
 
 Follow the steps below in order. Run commands from the CURRENT WORKING DIRECTORY (the parent of the new project).
 
@@ -154,11 +200,6 @@ If **IAP** was selected:
 npm install react-native-purchases react-native-purchases-ui
 ```
 
-If **push notifications** was selected:
-```bash
-npm install expo-notifications expo-device expo-constants
-```
-
 #### 3.4 Install Dev Dependencies
 
 ```bash
@@ -196,9 +237,18 @@ Create these files:
 - `src/lib/storage.ts` — MMKV wrapper with typed Storage interface
 - `src/lib/query.tsx` — QueryClient with defaults (5min staleTime, retry 2) + NetInfo online manager + QueryProvider component
 
+If **Laravel backend with Sanctum** was selected, also create:
+- `src/lib/api.ts` — fetch wrapper with Bearer token from MMKV
+
+Read [references/auth-guide.md](references/auth-guide.md) for the exact `api.ts` file contents.
+
 #### 3.10 Create Root Layout
 
-Write `src/app/_layout.tsx` — full provider hierarchy:
+Write `src/app/_layout.tsx` — full provider hierarchy.
+
+If **Laravel backend with Sanctum** was selected, use the auth-enabled layout from [references/auth-guide.md](references/auth-guide.md) which includes AuthGuard and auth state hydration.
+
+If no backend auth, use the standard layout from [references/wiring-guide.md](references/wiring-guide.md):
 
 ```
 import '../global.css'
@@ -211,13 +261,20 @@ GestureHandlerRootView
                       └─ Stack (headerShown: false)
 ```
 
-See [references/wiring-guide.md](references/wiring-guide.md) for exact code.
-
 #### 3.11 Create Index Screen
 
 Write `src/app/index.tsx` — a simple full-screen centered layout with a rocket emoji (Text, fontSize 64) and "Ship!" text below it. Style with Tailwind classes using the project's background color. Keep it minimal — this is just a placeholder.
 
-#### 3.12 Create App Config
+#### 3.12 Create Auth Feature (if Laravel + Sanctum)
+
+If **Laravel backend with Sanctum** was selected, read [references/auth-guide.md](references/auth-guide.md) and create:
+
+- `src/features/auth/types.ts` — User, LoginRequest, RegisterRequest, AuthResponse types
+- `src/features/auth/api.ts` — login, register, logout, getUser functions
+- `src/features/auth/store.ts` — Zustand auth store with MMKV persistence
+- `src/app/login.tsx` — Minimal login screen (email + password + button)
+
+#### 3.13 Create App Config
 
 Replace `app.json` with `app.config.ts`:
 
@@ -274,7 +331,6 @@ const appConfig: ExpoConfig = {
     ],
     'expo-secure-store',
     'expo-sharing',
-    // Add 'expo-notifications' here if push was selected
   ],
   experiments: {
     typedRoutes: true,
@@ -293,7 +349,7 @@ export default { expo: appConfig };
 
 Delete the old `app.json`.
 
-#### 3.13 Create Environment Config
+#### 3.14 Create Environment Config
 
 Write `env.ts`:
 
@@ -307,16 +363,20 @@ export const Env = {
     | 'development'
     | 'staging'
     | 'production',
-  API_URL: process.env.EXPO_PUBLIC_API_URL ?? '{API_URL_OR_DEFAULT}',
+  API_URL: process.env.EXPO_PUBLIC_API_URL ?? '{API_URL}',
   // Add REVENUECAT_API_KEY if IAP was selected:
   // REVENUECAT_API_KEY: process.env.EXPO_PUBLIC_REVENUECAT_API_KEY ?? '',
   ...extra,
 } as const;
 ```
 
+- If Laravel backend was selected, set `{API_URL}` to `http://{backendSlug}.test`
+- If non-Laravel backend was selected, use the user's provided URL
+- If no backend, use `http://localhost:3000` as placeholder
+
 Write `.env.example` with the corresponding `EXPO_PUBLIC_*` variables.
 
-#### 3.14 Create EAS Config
+#### 3.15 Create EAS Config
 
 Write `eas.json`:
 
@@ -347,11 +407,17 @@ Write `eas.json`:
 }
 ```
 
-#### 3.15 Create .gitignore and .easignore
+#### 3.16 Create .gitignore, .easignore, and .claude/settings.local.json
 
-Read [references/wiring-guide.md](references/wiring-guide.md) for the complete file contents. The .gitignore should cover node_modules, .expo, dist, native dirs, build artifacts, env files, etc. The .easignore should additionally exclude .git, docs, design assets, editor configs.
+Read [references/wiring-guide.md](references/wiring-guide.md) for the complete file contents.
 
-#### 3.16 Update package.json Scripts
+- `.gitignore` — covers node_modules, .expo, dist, native dirs, build artifacts, env files, etc.
+- `.easignore` — additionally excludes .git, docs, design assets, editor configs.
+- `.claude/settings.local.json` — AI agent permissions for common Expo development commands (git, npm, expo, jest, eslint, tsc, gh, etc.)
+
+Create the `.claude/` directory first: `mkdir -p .claude`
+
+#### 3.17 Update package.json Scripts
 
 Read the existing package.json, then update the `scripts` section:
 
@@ -393,7 +459,7 @@ Also update/add the `jest` config in package.json:
 
 Set `"main": "expo-router/entry"`.
 
-#### 3.17 Create Utility Scripts
+#### 3.18 Create Utility Scripts
 
 Copy the script templates from this skill into the new project:
 
@@ -403,7 +469,7 @@ Read [scripts/optimize-images.sh](scripts/optimize-images.sh) and write it to `{
 
 Make both executable: `chmod +x scripts/*.sh`
 
-#### 3.18 Generate DESIGN.md
+#### 3.19 Generate DESIGN.md
 
 Read [references/DESIGN-TEMPLATE.md](references/DESIGN-TEMPLATE.md) for the template structure.
 
@@ -416,7 +482,7 @@ Generate a DESIGN.md based on the user's vibe answer. This should include:
 
 The OKLCH values from DESIGN.md should match what you put in `src/global.css`.
 
-#### 3.19 Generate CLAUDE.md
+#### 3.20 Generate CLAUDE.md
 
 Read [references/CLAUDE-TEMPLATE.md](references/CLAUDE-TEMPLATE.md) for the template.
 
@@ -426,10 +492,10 @@ Generate a comprehensive CLAUDE.md tailored to the project. Fill in:
 - All npm scripts
 - Key patterns (features, routes, forms, data fetching, state, styling, storage)
 - Essential rules
-- Backend API section (if backend was selected)
+- Backend API section (if backend was selected — see the template for Laravel-specific content)
 - Reference to DESIGN.md for design tokens
 
-#### 3.20 Generate README.md
+#### 3.21 Generate README.md
 
 Generate a README.md with:
 - App name and brief description
@@ -438,7 +504,7 @@ Generate a README.md with:
 - Version numbers and releasing guide (semver, EAS build profiles)
 - Local build instructions
 
-#### 3.21 Install Project-Level Agent Skills
+#### 3.22 Install Project-Level Agent Skills
 
 ```bash
 cd {project_root}
@@ -460,14 +526,125 @@ Also install `find-skills` globally if not already present:
 npx skills add vercel-labs/skills@find-skills -g -y 2>/dev/null || true
 ```
 
-#### 3.22 Initialize Git
+#### 3.23 Initialize Git
 
 ```bash
 git add -A
 git commit -m "Initial scaffold via create-expo-app skill"
 ```
 
-### Step 4: Done!
+### Step 4: Scaffold Laravel Backend (if selected)
+
+**IMPORTANT**: Only execute this step if the user chose a Laravel backend in Q3. Run commands from the ORIGINAL WORKING DIRECTORY (the parent of both projects, same level as the Expo app).
+
+Read [references/laravel-guide.md](references/laravel-guide.md) for exact code and file contents referenced below.
+
+#### 4.1 Create Laravel App
+
+Ensure the `laravel` CLI is available. If not:
+```bash
+composer global require laravel/installer
+```
+
+Create the app with the React starter kit:
+```bash
+laravel new {backendSlug} --using=react
+```
+
+Install the API scaffolding (Sanctum):
+```bash
+cd {backendSlug}
+php artisan install:api
+```
+
+#### 4.2 Install Monitoring Tools
+
+Based on the user's Q3c answer, install Pulse and/or Telescope. See [references/laravel-guide.md](references/laravel-guide.md) section 2 for exact commands.
+
+Run `php artisan migrate` after publishing configs.
+
+Then:
+- Add access gates so only `test@example.com` can view Pulse/Telescope (section 2a)
+- Disable Pulse/Telescope in `phpunit.xml` (section 2b)
+
+#### 4.3 Wire Sidebar Navigation
+
+Add Pulse and/or Telescope links to the admin sidebar. See [references/laravel-guide.md](references/laravel-guide.md) section 3 for:
+
+1. Create `resources/js/components/nav-footer.tsx` — the NavFooter component
+2. Update `resources/js/components/app-sidebar.tsx` — add imports, footer nav items, and NavFooter in SidebarFooter before NavUser
+
+Only include items for the tools the user selected. The links open in new tabs (`target="_blank"`).
+
+#### 4.4 Create API Auth Endpoints (if Sanctum selected)
+
+See [references/laravel-guide.md](references/laravel-guide.md) section 4 for exact code:
+
+1. Create `app/Http/Controllers/Api/V1/AuthController.php` — login, register, logout, user endpoints
+2. Add routes to `routes/api.php` under `/v1/auth/` prefix
+
+Endpoints:
+- `POST /api/v1/auth/login` — returns token + user
+- `POST /api/v1/auth/register` — returns token + user
+- `POST /api/v1/auth/logout` — revokes token (auth required)
+- `GET /api/v1/auth/user` — returns current user (auth required)
+
+#### 4.5 Seed Test User
+
+Update `database/seeders/DatabaseSeeder.php` with a test user:
+- Email: `test@example.com`
+- Password: `bcrypt('password')`
+- Name: `Test User`
+
+See [references/laravel-guide.md](references/laravel-guide.md) section 5 for exact code.
+
+Run:
+```bash
+php artisan migrate:fresh --seed
+```
+
+#### 4.6 Production Safety
+
+Add `DB::prohibitDestructiveCommands` and `CarbonImmutable` to `AppServiceProvider`. See [references/laravel-guide.md](references/laravel-guide.md) section 6.
+
+#### 4.7 Install Laravel Boost
+
+```bash
+composer require --dev laravel/boost
+```
+
+#### 4.8 Create Custom Boost Guidelines
+
+Create the `.ai/guidelines/` directory and add `companion-app.md` with cross-project references. See [references/laravel-guide.md](references/laravel-guide.md) section 8 for the exact template.
+
+This file tells the AI:
+- Where the companion Expo app lives (`../{slug}/`)
+- How to handle cross-project commands ("check the app", "create an issue in the app")
+- Where the API contract is documented (`docs/api-specs.md`)
+- The app's tech stack
+
+#### 4.9 Run Boost Install
+
+```bash
+php artisan boost:install
+```
+
+This generates AGENTS.md and CLAUDE.md (including the custom companion-app guideline), installs skills, and configures MCP servers automatically.
+
+#### 4.10 Generate API Specs
+
+Generate `docs/api-specs.md` by introspecting the actual Laravel routes and controllers. See [references/laravel-guide.md](references/laravel-guide.md) section 10 for the structure.
+
+**IMPORTANT**: Do not use a static template. Read the actual routes (`php artisan route:list --json`) and controller code, then generate accurate documentation from the real implementation. Document every `/api/*` route with HTTP method, URL, auth requirements, request/response format, and validation rules.
+
+#### 4.11 Commit
+
+```bash
+git add -A
+git commit -m "Initial scaffold with React starter kit, Sanctum API, and Laravel Boost"
+```
+
+### Step 5: Done!
 
 Print a summary:
 
@@ -484,5 +661,20 @@ Next steps:
   4. Review DESIGN.md for your design tokens
   5. Review CLAUDE.md for project conventions
   {6. Set up RevenueCat API key in .env (if IAP)}
-  {6. Configure push notification permissions (if push)}
+```
+
+If Laravel backend was selected, also print:
+
+```
+Laravel backend ready!
+
+  cd {backendSlug}
+  php artisan serve   # or use Laravel Herd at http://{backendSlug}.test
+
+  Test login:
+    Email:    test@example.com
+    Password: password
+
+  The API contract is documented in {backendSlug}/docs/api-specs.md.
+  Both projects know about each other — just say "check the backend" or "check the app".
 ```
