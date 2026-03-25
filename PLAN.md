@@ -62,6 +62,8 @@ A standalone, runnable Expo boilerplate that works out of the box (`git clone` �
 - `references/wiring-guide.md` — config templates baked into boilerplate
 - `references/auth-guide.md` — auth files in `templates/auth/`
 - `references/CLAUDE-TEMPLATE.md` — boilerplate ships with CLAUDE.md, agent appends to it
+- `references/laravel-guide.md` — code templates now in laravel-boilerplate as skills/scripts/templates
+- `references/DESIGN-TEMPLATE.md` — agent updates the existing DESIGN.md from the boilerplate instead
 - `scripts/optimize-images.sh` — lives in boilerplate
 - `scripts/sync-production-env.sh` — lives in boilerplate
 
@@ -96,9 +98,11 @@ A standalone, runnable Expo boilerplate that works out of the box (`git clone` �
 
 ### Medium Priority
 
-- [x] **Create a Laravel boilerplate repo** — `robin7331/expo-boilerplate-laravel-backend`. Laravel 13 + React starter kit with Boost pre-configured. Deterministic setup (production safety, NavFooter, test user seeder, phpunit disables) baked in. Local skills: `/add-sanctum-api` (AuthController, routes, gates, migrate), `/add-pulse-telescope` (install, publish, sidebar wiring). Custom guideline: `.ai/guidelines/companion-app.md` with `__APP_SLUG__` placeholder. `scaffold-laravel.sh` rewritten to clone this repo instead of running `laravel new`. `references/laravel-guide.md` removed (now in boilerplate).
+- [x] **Create a Laravel boilerplate repo** — `robin7331/expo-boilerplate-laravel-backend`. Laravel 13 + React starter kit with Boost pre-configured. Deterministic setup (production safety, NavFooter, test user seeder, phpunit disables) baked in. Local skills: `/add-sanctum-api` (AuthController, routes, gates, migrate), `/add-pulse-telescope` (install, publish, sidebar wiring). Custom guidelines: `companion-app.md` (`__APP_SLUG__` placeholder), `design-system.md` (enforces DESIGN.md ↔ app.css sync), `skill-development.md` (contributing skills back to the boilerplate). DESIGN.md with full OKLCH palette, typography, component library docs. `scaffold-laravel.sh` rewritten to clone this repo instead of running `laravel new`.
 
 - [x] **DESIGN-TEMPLATE.md redundancy** — removed. The agent now reads the existing DESIGN.md from the boilerplate and updates values based on the user's vibe, instead of generating from a separate template. Both boilerplates (Expo and Laravel) ship with their own DESIGN.md with neutral defaults.
+
+- [x] **Boilerplate contribution workflow** — both boilerplate repos have guidelines explaining how to contribute reusable features back as skills. Only triggers when the user explicitly mentions "the boilerplate" or "the boilerplates". Includes steps for creating the skill, and updating the `create-expo-app` orchestrator if needed.
 
 - [ ] **scaffold-expo.sh portability** — currently uses `sed -i ''` (macOS). Won't work on Linux. Consider using `sed -i` without the empty string arg, or use a different approach for cross-platform compat.
 
