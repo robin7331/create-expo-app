@@ -153,18 +153,14 @@ cd {slug}
 bash scripts/add-iap.sh
 ```
 
-### 3.4 Generate DESIGN.md (Agent)
+### 3.4 Update DESIGN.md (Agent)
 
-Generate a DESIGN.md in the project directory based on the user's design vibe answer.
+The boilerplate ships with a `DESIGN.md` containing neutral defaults. Read it, then update the values based on the user's design vibe answer:
 
-Read [references/DESIGN-TEMPLATE.md](references/DESIGN-TEMPLATE.md) for the template structure.
-
-The DESIGN.md should include:
-- Color palette with OKLCH values (primary, accent, background, surface, foreground)
-- Typography recommendations
-- Spacing & border radius tokens
-- Brand voice guidelines
-- Dark/light mode strategy
+- Replace the OKLCH color values (primary, accent, background, surface, foreground) with colors that match the vibe
+- Update the brand voice section to reflect the app's personality
+- Update the dark/light mode strategy if appropriate
+- Keep the same document structure — only change the values
 
 ### 3.5 Update global.css colors (Agent)
 
