@@ -189,35 +189,33 @@ Determine the `API_URL`:
 - If non-Laravel backend: user's provided URL
 - If no backend: `http://localhost:3000`
 
-Run from the CURRENT WORKING DIRECTORY:
+**IMPORTANT**: All commands in Phase 1 MUST use absolute paths. Store the working directory at the start: `WD=$(pwd)`. Never rely on `cd` — always use `$WD/{slug}` or `$WD/{backendSlug}` as prefixes. This prevents the Laravel backend from being scaffolded inside the Expo app directory.
+
+Where `{SKILL_DIR}` is the absolute path to this skill's directory (the folder containing this SKILL.md).
 
 ```bash
 bash {SKILL_DIR}/scripts/scaffold-expo.sh "{slug}" "{APP_NAME}" "{bundleId}" "{API_URL}"
 ```
 
-Where `{SKILL_DIR}` is the absolute path to this skill's directory (the folder containing this SKILL.md).
-
-**If Sanctum selected (Q3b = yes)**, run in the newly scaffolded project:
+**If Sanctum selected (Q3b = yes)**:
 
 ```bash
-cd {slug}
-bash scripts/add-auth.sh
+bash $WD/{slug}/scripts/add-auth.sh
 ```
 
-**If IAP selected (Q4 = yes)**, run in the newly scaffolded project:
+**If IAP selected (Q4 = yes)**:
 
 ```bash
-cd {slug}
-bash scripts/add-iap.sh
-npx skills add https://github.com/revenuecat/revenuecat-skill --skill revenuecat -y >/dev/null 2>&1 && echo "  ✓ revenuecat skill" || echo "  ✗ revenuecat skill (skipped)"
+bash $WD/{slug}/scripts/add-iap.sh
+cd $WD/{slug} && npx skills add https://github.com/revenuecat/revenuecat-skill --skill revenuecat -y >/dev/null 2>&1 && echo "  ✓ revenuecat skill" || echo "  ✗ revenuecat skill (skipped)"
 ```
 
 ### 1.4 Scaffold Laravel Backend (if selected)
 
-**IMPORTANT**: Only execute if the user chose a Laravel backend in Q3. Run from the ORIGINAL WORKING DIRECTORY (the parent of both projects).
+Only execute if the user chose a Laravel backend in Q3.
 
 ```bash
-bash {SKILL_DIR}/scripts/scaffold-laravel.sh "{backendSlug}" "{slug}"
+cd $WD && bash {SKILL_DIR}/scripts/scaffold-laravel.sh "{backendSlug}" "{slug}"
 ```
 
 This clones the boilerplate, replaces the companion app slug placeholder, sets up `.env` with the correct `APP_NAME` and `APP_URL`, installs dependencies, runs migrations, and initializes git.
@@ -225,15 +223,13 @@ This clones the boilerplate, replaces the companion app slug placeholder, sets u
 **If Sanctum selected (Q3b = yes)**:
 
 ```bash
-cd {backendSlug}
-bash scripts/add-sanctum-api.sh
+bash $WD/{backendSlug}/scripts/add-sanctum-api.sh
 ```
 
 **If monitoring tools selected (Q3c)**:
 
 ```bash
-cd {backendSlug}
-bash scripts/add-pulse-telescope.sh [--pulse] [--telescope]
+cd $WD/{backendSlug} && bash scripts/add-pulse-telescope.sh [--pulse] [--telescope]
 ```
 
 Include the flags based on the user's Q3c answer.
@@ -309,9 +305,7 @@ Generate a README.md with:
 ### 2.5 Commit Expo App
 
 ```bash
-cd {slug}
-git add -A
-git commit -m "Add DESIGN.md, CLAUDE.md, README.md, and design tokens"
+cd $WD/{slug} && git add -A && git commit -m "Add DESIGN.md, CLAUDE.md, README.md, and design tokens"
 ```
 
 ### 2.6 Save State & Finish or Continue
@@ -344,8 +338,8 @@ Or just say "continue" to keep going now.
 
 ### 3.1 Generate API Docs (Agent)
 
-1. Run `php artisan route:list --json` in the `{backendSlug}` directory to get all registered routes
-2. Read the AuthController code at `app/Http/Controllers/Api/V1/AuthController.php`
+1. Run `cd $WD/{backendSlug} && php artisan route:list --json` to get all registered routes
+2. Read the AuthController code at `$WD/{backendSlug}/app/Http/Controllers/Api/V1/AuthController.php`
 3. Generate `docs/api-specs.md` documenting every `/api/*` route with:
    - HTTP method and URL
    - Authentication requirements
@@ -358,9 +352,7 @@ Do NOT use a static template — generate from the actual code.
 ### 3.2 Commit Laravel Backend
 
 ```bash
-cd {backendSlug}
-git add -A
-git commit -m "Add Sanctum API auth, monitoring tools, and API docs"
+cd $WD/{backendSlug} && git add -A && git commit -m "Add Sanctum API auth, monitoring tools, and API docs"
 ```
 
 ### 3.3 Clean Up & Done
