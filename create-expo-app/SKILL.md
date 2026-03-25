@@ -11,7 +11,7 @@ license: MIT
 compatibility: Requires Node.js 18+, npm, and npx. macOS recommended for iOS builds. Laravel backend requires PHP 8.2+ and Composer.
 metadata:
   author: robin7331
-  version: "3.0.0"
+  version: "4.0.0"
 ---
 
 # Create Expo App
@@ -26,7 +26,57 @@ This skill separates concerns into three layers:
 2. **Shell scripts** — deterministic scaffolding (clone boilerplate, CLI commands, template copying)
 3. **Agents** — intelligent generation (DESIGN.md from vibe, CLAUDE.md, README.md, global.css colors)
 
-## Step 1: Ask Questions
+### Phased Execution
+
+The skill runs in **phases** to keep token usage manageable. After each phase, progress is saved to `.create-expo-app-state.json` in the working directory. The user can clear context (via `/compact` or starting a new conversation) and re-invoke `/create-expo-app` to resume from where they left off.
+
+| Phase | What happens | Token cost |
+|-------|-------------|------------|
+| 1 | Ask questions, confirm, run all scaffold shell scripts | Low |
+| 2 | Generate DESIGN.md, global.css, CLAUDE.md, README.md — commit Expo app | High (agent work) |
+| 3 | Generate Laravel API docs — commit backend — print summary | Medium (only if Laravel selected) |
+
+If no Laravel backend was selected, Phase 2 is the final phase.
+
+## On Invoke: Check for State File
+
+When the skill is invoked, **FIRST** check if `.create-expo-app-state.json` exists in the current working directory.
+
+- **If it exists**: Read it, determine the next incomplete phase, and tell the user:
+  ```
+  Resuming from Phase {N}...
+  ```
+  Then jump directly to that phase — do NOT re-ask questions.
+- **If it does not exist**: Start from Phase 1.
+
+### State File Format
+
+```json
+{
+  "version": 1,
+  "currentPhase": 2,
+  "completedPhases": [1],
+  "params": {
+    "name": "My App",
+    "slug": "my-app",
+    "bundleId": "com.example.my.app",
+    "laravel": true,
+    "backendSlug": "my-app-backend",
+    "sanctum": true,
+    "monitoring": "both",
+    "iap": false,
+    "vibe": "Black / white shadcn neutral",
+    "apiUrl": "http://my-app-backend.test",
+    "hasBackendApi": true
+  }
+}
+```
+
+---
+
+## Phase 1: Gather & Scaffold
+
+### 1.1 Ask Questions
 
 **IMPORTANT**: Ask these questions ONE AT A TIME. Wait for each answer before proceeding.
 
@@ -74,8 +124,22 @@ Will your app have in-app purchases or subscriptions? [y/N]
 
 **Q5: Design Vibe**
 ```
-Describe your app's visual vibe in a few words (e.g., "playful kids app", "minimal fitness tracker", "dark premium fintech"):
+Pick a visual vibe for your app:
+
+  1. Black / white shadcn neutral
+  2. Dark premium fintech
+  3. Soft pastel wellness
+  4. Bold neon cyberpunk
+  5. Warm earthy organic
+  6. Clean corporate SaaS
+  7. Playful & colorful
+  8. Minimal mono
+  9. Luxury dark
+  10. Custom (describe your own)
+
+Enter a number [1]:
 ```
+If the user picks 10, ask them to describe their vibe in a few words. Default is 1 if they press enter.
 
 **NOTE**: If the user chose a Laravel backend in Q3, the "Backend API" question is automatically answered yes with `API_URL` set to `http://{backendSlug}.test` (Laravel Herd). Do NOT ask a separate backend question.
 
@@ -87,7 +151,7 @@ Does your app need a backend API? [y/N]
 ```
 If yes, ask for the API base URL (default: `http://localhost:3000`).
 
-## Step 2: Confirm
+### 1.2 Confirm
 
 Present a summary and ask for confirmation:
 
@@ -118,9 +182,7 @@ If Laravel backend was selected, also show:
 Ready to go? [Y/n]
 ```
 
-## Step 3: Scaffold Expo App
-
-### 3.1 Run scaffold script
+### 1.3 Scaffold Expo App
 
 Determine the `API_URL`:
 - If Laravel backend: `http://{backendSlug}.test`
@@ -135,25 +197,73 @@ bash {SKILL_DIR}/scripts/scaffold-expo.sh "{slug}" "{APP_NAME}" "{bundleId}" "{A
 
 Where `{SKILL_DIR}` is the absolute path to this skill's directory (the folder containing this SKILL.md).
 
-### 3.2 Auto-invoke /add-auth (if Sanctum selected)
-
-If the user selected a Laravel backend with Sanctum API tokens (Q3b = yes), run the add-auth script in the newly scaffolded project:
+**If Sanctum selected (Q3b = yes)**, run in the newly scaffolded project:
 
 ```bash
 cd {slug}
 bash scripts/add-auth.sh
 ```
 
-### 3.3 Auto-invoke /add-iap (if IAP selected)
-
-If the user selected in-app purchases (Q4 = yes), run the add-iap script in the newly scaffolded project:
+**If IAP selected (Q4 = yes)**, run in the newly scaffolded project:
 
 ```bash
 cd {slug}
 bash scripts/add-iap.sh
 ```
 
-### 3.4 Update DESIGN.md (Agent)
+### 1.4 Scaffold Laravel Backend (if selected)
+
+**IMPORTANT**: Only execute if the user chose a Laravel backend in Q3. Run from the ORIGINAL WORKING DIRECTORY (the parent of both projects).
+
+```bash
+bash {SKILL_DIR}/scripts/scaffold-laravel.sh "{backendSlug}" "{slug}"
+```
+
+This clones the boilerplate, replaces the companion app slug placeholder, sets up `.env` with the correct `APP_NAME` and `APP_URL`, installs dependencies, runs migrations, and initializes git.
+
+**If Sanctum selected (Q3b = yes)**:
+
+```bash
+cd {backendSlug}
+bash scripts/add-sanctum-api.sh
+```
+
+**If monitoring tools selected (Q3c)**:
+
+```bash
+cd {backendSlug}
+bash scripts/add-pulse-telescope.sh [--pulse] [--telescope]
+```
+
+Include the flags based on the user's Q3c answer.
+
+### 1.5 Save State & Suggest Context Clear
+
+Write `.create-expo-app-state.json` to the working directory with all parameters and `completedPhases: [1]`, `currentPhase: 2`.
+
+Then print:
+
+```
+Phase 1 complete — projects scaffolded!
+
+Next up: Phase 2 will generate DESIGN.md, CLAUDE.md, README.md, and apply your design tokens.
+
+To free up context before continuing (recommended):
+  - Type /compact to compress this conversation, or
+  - Start a new conversation and run /create-expo-app — it will resume automatically.
+
+Or just say "continue" to keep going now.
+```
+
+**Wait for the user to respond before proceeding to Phase 2.**
+
+---
+
+## Phase 2: Generate Expo Project Docs
+
+Read parameters from the state file (or from conversation context if continuing without a clear).
+
+### 2.1 Update DESIGN.md (Agent)
 
 The boilerplate ships with a `DESIGN.md` containing neutral defaults. Read it, then update the values based on the user's design vibe answer:
 
@@ -162,11 +272,11 @@ The boilerplate ships with a `DESIGN.md` containing neutral defaults. Read it, t
 - Update the dark/light mode strategy if appropriate
 - Keep the same document structure — only change the values
 
-### 3.5 Update global.css colors (Agent)
+### 2.2 Update global.css colors (Agent)
 
 After generating DESIGN.md, update `src/global.css` in the project to replace the default color values with the OKLCH values from DESIGN.md. The `@theme` and `@layer theme` blocks must match DESIGN.md exactly.
 
-### 3.6 Update CLAUDE.md (Agent)
+### 2.3 Update CLAUDE.md (Agent)
 
 The boilerplate already ships with a complete CLAUDE.md covering the stack, patterns, and conventions. Read the existing `CLAUDE.md` in the project, then **append** sections based on the user's choices. Do NOT regenerate the whole file.
 
@@ -186,7 +296,7 @@ The boilerplate already ships with a complete CLAUDE.md covering the stack, patt
 
 **Always**, update the project structure in CLAUDE.md if auth added `lib/api.ts` or `features/auth/`.
 
-### 3.7 Generate README.md (Agent)
+### 2.4 Generate README.md (Agent)
 
 Generate a README.md with:
 - App name and brief description
@@ -195,7 +305,7 @@ Generate a README.md with:
 - Version numbers and releasing guide (semver, EAS build profiles)
 - Local build instructions
 
-### 3.8 Final commit
+### 2.5 Commit Expo App
 
 ```bash
 cd {slug}
@@ -203,30 +313,37 @@ git add -A
 git commit -m "Add DESIGN.md, CLAUDE.md, README.md, and design tokens"
 ```
 
-## Step 4: Scaffold Laravel Backend (if selected)
+### 2.6 Save State & Finish or Continue
 
-**IMPORTANT**: Only execute this step if the user chose a Laravel backend in Q3. Run commands from the ORIGINAL WORKING DIRECTORY (the parent of both projects).
+Update the state file: add `2` to `completedPhases`, set `currentPhase: 3`.
 
-### 4.1 Run scaffold script
+**If NO Laravel backend was selected**: this is the final phase. Delete `.create-expo-app-state.json` and jump to the **Done** section below.
 
-```bash
-bash {SKILL_DIR}/scripts/scaffold-laravel.sh "{backendSlug}" "{slug}"
+**If Laravel backend was selected**, print:
+
+```
+Phase 2 complete — Expo app docs generated and committed!
+
+Next up: Phase 3 will generate Laravel API docs and finalize the backend.
+
+To free up context before continuing (recommended):
+  - Type /compact to compress this conversation, or
+  - Start a new conversation and run /create-expo-app — it will resume automatically.
+
+Or just say "continue" to keep going now.
 ```
 
-This clones the boilerplate, replaces the companion app slug placeholder, sets up `.env` with the correct `APP_NAME` and `APP_URL`, installs dependencies, runs migrations, runs `boost:install`, and initializes git.
+**Wait for the user to respond before proceeding to Phase 3.**
 
-### 4.2 Add Sanctum API (if selected)
+---
 
-If the user selected Sanctum API tokens (Q3b = yes), run the add-sanctum-api script in the newly scaffolded backend:
+## Phase 3: Generate Laravel Docs & Finish
 
-```bash
-cd {backendSlug}
-bash scripts/add-sanctum-api.sh
-```
+**Only runs if a Laravel backend was selected.** Read parameters from the state file (or from conversation context if continuing without a clear).
 
-Then generate `docs/api-specs.md` (Agent work):
+### 3.1 Generate API Docs (Agent)
 
-1. Run `php artisan route:list --json` to get all registered routes
+1. Run `php artisan route:list --json` in the `{backendSlug}` directory to get all registered routes
 2. Read the AuthController code at `app/Http/Controllers/Api/V1/AuthController.php`
 3. Generate `docs/api-specs.md` documenting every `/api/*` route with:
    - HTTP method and URL
@@ -237,18 +354,7 @@ Then generate `docs/api-specs.md` (Agent work):
 
 Do NOT use a static template — generate from the actual code.
 
-### 4.3 Add Pulse & Telescope (if selected)
-
-If the user selected monitoring tools (Q3c), run the add-pulse-telescope script:
-
-```bash
-cd {backendSlug}
-bash scripts/add-pulse-telescope.sh [--pulse] [--telescope]
-```
-
-Include the flags based on the user's Q3c answer.
-
-### 4.4 Commit
+### 3.2 Commit Laravel Backend
 
 ```bash
 cd {backendSlug}
@@ -256,7 +362,13 @@ git add -A
 git commit -m "Add Sanctum API auth, monitoring tools, and API docs"
 ```
 
-## Step 5: Done!
+### 3.3 Clean Up & Done
+
+Delete `.create-expo-app-state.json`, then jump to the **Done** section below.
+
+---
+
+## Done
 
 Print a summary:
 

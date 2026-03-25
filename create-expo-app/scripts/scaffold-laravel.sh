@@ -62,11 +62,6 @@ php artisan key:generate --no-interaction
 echo "Running migrations..."
 php artisan migrate --no-interaction
 
-# ── Laravel Boost ────────────────────────────────────────────────────────────
-
-echo "Running boost:install..."
-php artisan boost:install --no-interaction
-
 # ── Git init ─────────────────────────────────────────────────────────────────
 
 echo "Initializing git repository..."

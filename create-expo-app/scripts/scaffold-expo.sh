@@ -52,14 +52,44 @@ sed -i '' "s|\"name\": \"expo-boilerplate\"|\"name\": \"${SLUG}\"|" package.json
 echo "Installing dependencies..."
 npm install
 
-# ── Install agent skills (best-effort) ──────────────────────────────────────
+# ── Install agent skills (best-effort, quiet) ────────────────────────────────
 
 echo "Installing agent skills..."
-npx skills add vercel-labs/agent-skills@react-native-guidelines -y 2>/dev/null || true
-npx skills add heroui/heroui-native-skill@heroui-native -y 2>/dev/null || true
-npx skills add nicepkg/uniwind-skill@uniwind -y 2>/dev/null || true
-npx skills add vercel-labs/agent-skills@react-best-practices -y 2>/dev/null || true
-npx skills add vercel-labs/skills@find-skills -g -y 2>/dev/null || true
+
+SKILLS=(
+  "vercel-labs/agent-skills@react-native-guidelines"
+  "vercel-labs/agent-skills@react-best-practices"
+)
+GLOBAL_SKILLS=(
+  "vercel-labs/skills@find-skills"
+)
+
+installed=0
+failed=0
+
+for skill in "${SKILLS[@]}"; do
+  name="${skill##*@}"
+  if npx skills add "$skill" -y >/dev/null 2>&1; then
+    echo "  ✓ $name"
+    ((installed++))
+  else
+    echo "  ✗ $name (skipped)"
+    ((failed++))
+  fi
+done
+
+for skill in "${GLOBAL_SKILLS[@]}"; do
+  name="${skill##*@}"
+  if npx skills add "$skill" -g -y >/dev/null 2>&1; then
+    echo "  ✓ $name (global)"
+    ((installed++))
+  else
+    echo "  ✗ $name (skipped)"
+    ((failed++))
+  fi
+done
+
+echo "  ${installed} installed, ${failed} skipped"
 
 # ── Git init ─────────────────────────────────────────────────────────────────
 
