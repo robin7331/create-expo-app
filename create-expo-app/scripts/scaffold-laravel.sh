@@ -1,87 +1,78 @@
 #!/bin/bash
 #
-# scaffold-laravel.sh — Create a Laravel backend with React starter kit
+# scaffold-laravel.sh — Clone the laravel-boilerplate and customize it for a new project
 #
 # Usage:
-#   scaffold-laravel.sh <backend-slug> [--sanctum] [--pulse] [--telescope]
+#   scaffold-laravel.sh <backend-slug> <app-slug>
 #
 # Example:
-#   scaffold-laravel.sh my-app-backend --sanctum --pulse --telescope
+#   scaffold-laravel.sh my-app-backend my-app
 
 set -euo pipefail
 
 # ── Args ─────────────────────────────────────────────────────────────────────
 
-BACKEND_SLUG="${1:?Usage: scaffold-laravel.sh <backend-slug> [--sanctum] [--pulse] [--telescope]}"
-shift
+BACKEND_SLUG="${1:?Usage: scaffold-laravel.sh <backend-slug> <app-slug>}"
+APP_SLUG="${2:?Usage: scaffold-laravel.sh <backend-slug> <app-slug>}"
 
-SANCTUM=false
-PULSE=false
-TELESCOPE=false
+REPO="https://github.com/robin7331/expo-boilerplate-laravel-backend.git"
 
-for arg in "$@"; do
-  case "$arg" in
-    --sanctum) SANCTUM=true ;;
-    --pulse) PULSE=true ;;
-    --telescope) TELESCOPE=true ;;
-  esac
-done
-
-# ── Create Laravel app ──────────────────────────────────────────────────────
+# ── Clone ────────────────────────────────────────────────────────────────────
 
 if [ -d "$BACKEND_SLUG" ]; then
   echo "Error: directory '$BACKEND_SLUG' already exists"
   exit 1
 fi
 
-# Ensure laravel CLI is available
-if ! command -v laravel &>/dev/null; then
-  echo "Installing Laravel installer..."
-  composer global require laravel/installer
-fi
-
-echo "Creating Laravel app '$BACKEND_SLUG' with React starter kit..."
-laravel new "$BACKEND_SLUG" --using=react
+echo "Cloning laravel-boilerplate into $BACKEND_SLUG/..."
+git clone --depth 1 "$REPO" "$BACKEND_SLUG"
+rm -rf "$BACKEND_SLUG/.git"
 
 cd "$BACKEND_SLUG"
 
-# ── Sanctum API ─────────────────────────────────────────────────────────────
+# ── Replace placeholders ────────────────────────────────────────────────────
 
-if $SANCTUM; then
-  echo "Installing Sanctum API scaffolding..."
-  php artisan install:api
-fi
+echo "Customizing for '$BACKEND_SLUG'..."
 
-# ── Pulse ────────────────────────────────────────────────────────────────────
+# Companion app slug in guideline
+sed -i '' "s|__APP_SLUG__|${APP_SLUG}|g" .ai/guidelines/companion-app.md
 
-if $PULSE; then
-  echo "Installing Laravel Pulse..."
-  composer require laravel/pulse
-  php artisan vendor:publish --provider="Laravel\Pulse\PulseServiceProvider"
-fi
+# ── Set up environment ───────────────────────────────────────────────────────
 
-# ── Telescope ────────────────────────────────────────────────────────────────
+echo "Setting up environment..."
+cp .env.example .env
 
-if $TELESCOPE; then
-  echo "Installing Laravel Telescope..."
-  composer require laravel/telescope
-  php artisan telescope:install
-fi
+# Set APP_NAME and APP_URL in .env
+sed -i '' "s|APP_NAME=Laravel|APP_NAME=${BACKEND_SLUG}|" .env
+sed -i '' "s|APP_URL=http://localhost|APP_URL=http://${BACKEND_SLUG}.test|" .env
 
-# ── Migrate ──────────────────────────────────────────────────────────────────
+# ── Install dependencies ────────────────────────────────────────────────────
 
-if $PULSE || $TELESCOPE || $SANCTUM; then
-  echo "Running migrations..."
-  php artisan migrate
-fi
+echo "Installing PHP dependencies..."
+composer install --no-interaction --quiet
+
+echo "Installing Node dependencies..."
+npm install --silent
+
+# ── Laravel setup ────────────────────────────────────────────────────────────
+
+echo "Generating app key..."
+php artisan key:generate --no-interaction
+
+echo "Running migrations..."
+php artisan migrate --no-interaction
 
 # ── Laravel Boost ────────────────────────────────────────────────────────────
 
-echo "Installing Laravel Boost..."
-composer require --dev laravel/boost
+echo "Running boost:install..."
+php artisan boost:install --no-interaction
 
-# ── Done ─────────────────────────────────────────────────────────────────────
+# ── Git init ─────────────────────────────────────────────────────────────────
+
+echo "Initializing git repository..."
+git init
+git add -A
+git commit -m "Initial scaffold via create-expo-app skill"
 
 echo ""
-echo "Laravel scaffolding complete: $BACKEND_SLUG/"
-echo "Remaining steps (handled by agent): AuthController, routes, seeder, sidebar, boost:install, API specs"
+echo "Done! cd $BACKEND_SLUG"
