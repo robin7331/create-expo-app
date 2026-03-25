@@ -209,6 +209,7 @@ bash scripts/add-auth.sh
 ```bash
 cd {slug}
 bash scripts/add-iap.sh
+npx skills add https://github.com/revenuecat/revenuecat-skill --skill revenuecat -y >/dev/null 2>&1 && echo "  ✓ revenuecat skill" || echo "  ✗ revenuecat skill (skipped)"
 ```
 
 ### 1.4 Scaffold Laravel Backend (if selected)

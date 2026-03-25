@@ -56,32 +56,22 @@ npm install
 
 echo "Installing agent skills..."
 
+# Each entry: "display_name|command|flags"
 SKILLS=(
-  "vercel-labs/agent-skills@react-native-guidelines"
-  "vercel-labs/agent-skills@react-best-practices"
-)
-GLOBAL_SKILLS=(
-  "vercel-labs/skills@find-skills"
+  "heroui-native|https://github.com/heroui-inc/heroui --skill heroui-native|"
+  "uniwind|uni-stack/uniwind|"
+  "vercel-react-native-skills|https://github.com/vercel-labs/agent-skills --skill vercel-react-native-skills|"
+  "react-native-architecture|https://github.com/wshobson/agents --skill react-native-architecture|"
+  "apple-appstore-reviewer|https://github.com/github/awesome-copilot --skill apple-appstore-reviewer|"
 )
 
 installed=0
 failed=0
 
-for skill in "${SKILLS[@]}"; do
-  name="${skill##*@}"
-  if npx skills add "$skill" -y >/dev/null 2>&1; then
+for entry in "${SKILLS[@]}"; do
+  IFS='|' read -r name cmd flags <<< "$entry"
+  if npx skills add $cmd $flags -y >/dev/null 2>&1; then
     echo "  ✓ $name"
-    ((installed++))
-  else
-    echo "  ✗ $name (skipped)"
-    ((failed++))
-  fi
-done
-
-for skill in "${GLOBAL_SKILLS[@]}"; do
-  name="${skill##*@}"
-  if npx skills add "$skill" -g -y >/dev/null 2>&1; then
-    echo "  ✓ $name (global)"
     ((installed++))
   else
     echo "  ✗ $name (skipped)"
