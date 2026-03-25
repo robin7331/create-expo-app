@@ -3,10 +3,10 @@
 # scaffold-expo.sh — Clone the expo-boilerplate and customize it for a new project
 #
 # Usage:
-#   scaffold-expo.sh <slug> <app-name> <bundle-id> [api-url]
+#   scaffold-expo.sh <slug> <app-name> <bundle-id> [api-url] [ats-http-domain]
 #
 # Example:
-#   scaffold-expo.sh my-cool-app "My Cool App" com.example.mycoolapp http://my-cool-app-backend.test
+#   scaffold-expo.sh my-cool-app "My Cool App" com.example.mycoolapp http://my-cool-app-backend.test my-cool-app-backend.test
 
 set -euo pipefail
 
@@ -16,6 +16,7 @@ SLUG="${1:?Usage: scaffold-expo.sh <slug> <app-name> <bundle-id> [api-url]}"
 APP_NAME="${2:?Usage: scaffold-expo.sh <slug> <app-name> <bundle-id> [api-url]}"
 BUNDLE_ID="${3:?Usage: scaffold-expo.sh <slug> <app-name> <bundle-id> [api-url]}"
 API_URL="${4:-http://localhost:3000}"
+ATS_HTTP_DOMAIN="${5:-}"
 
 REPO="https://github.com/robin7331/expo-boilerplate.git"
 
@@ -46,6 +47,12 @@ sed -i '' "s|http://localhost:3000|${API_URL}|g" env.ts
 
 # package.json — update name field
 sed -i '' "s|\"name\": \"expo-boilerplate\"|\"name\": \"${SLUG}\"|" package.json
+
+# app.config.ts — add ATS exception for insecure HTTP domain (iOS)
+if [ -n "$ATS_HTTP_DOMAIN" ]; then
+  echo "Adding ATS exception for $ATS_HTTP_DOMAIN..."
+  perl -i -pe "s|(ITSAppUsesNonExemptEncryption: false,)|\$1\n      NSAppTransportSecurity: {\n        NSExceptionDomains: {\n          '${ATS_HTTP_DOMAIN}': {\n            NSExceptionAllowsInsecureHTTPLoads: true,\n          },\n        },\n      },|" app.config.ts
+fi
 
 # ── Install dependencies ────────────────────────────────────────────────────
 

@@ -67,7 +67,8 @@ When the skill is invoked, **FIRST** check if `.create-expo-app-state.json` exis
     "iap": false,
     "vibe": "Black / white shadcn neutral",
     "apiUrl": "http://my-app-backend.test",
-    "hasBackendApi": true
+    "hasBackendApi": true,
+    "atsHttpDomain": "my-app-backend.test"
   }
 }
 ```
@@ -151,6 +152,24 @@ Does your app need a backend API? [y/N]
 ```
 If yes, ask for the API base URL (default: `http://localhost:3000`).
 
+**Q6: App Transport Security (only if API URL starts with `http://`)**
+
+Determine the `API_URL` at this point (same logic as section 1.3):
+- If Laravel backend: `http://{backendSlug}.test`
+- If non-Laravel backend: user's provided URL
+- If no backend: skip this question
+
+If the API URL starts with `http://` (not `https://`), extract the hostname from the URL and ask:
+
+```
+Your API URL uses plain HTTP ({apiUrl}).
+iOS blocks insecure HTTP by default (App Transport Security).
+
+Add an ATS exception to allow HTTP connections to {hostname}? [Y/n]
+```
+
+Default is yes. Store the answer as `atsHttpDomain` — set to the hostname if yes, empty string if no.
+
 ### 1.2 Confirm
 
 Present a summary and ask for confirmation:
@@ -176,6 +195,7 @@ If Laravel backend was selected, also show:
     Auth:       Sanctum API tokens {yes/no}
     Monitoring: {Both/Pulse/Telescope/Neither}
     API URL:    http://{backendSlug}.test
+    ATS:        Allow HTTP to {atsHttpDomain} (if set)
 ```
 
 ```
@@ -194,8 +214,10 @@ Determine the `API_URL`:
 Where `{SKILL_DIR}` is the absolute path to this skill's directory (the folder containing this SKILL.md).
 
 ```bash
-bash {SKILL_DIR}/scripts/scaffold-expo.sh "{slug}" "{APP_NAME}" "{bundleId}" "{API_URL}"
+bash {SKILL_DIR}/scripts/scaffold-expo.sh "{slug}" "{APP_NAME}" "{bundleId}" "{API_URL}" "{atsHttpDomain}"
 ```
+
+The 5th argument is the hostname to allow insecure HTTP for (from Q6). Pass an empty string if the user declined or the question was skipped.
 
 **If Sanctum selected (Q3b = yes)**:
 
