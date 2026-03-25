@@ -12,15 +12,18 @@ This skill makes choices so you don't have to. It's built for developers who lov
 
 ### Expo App (always)
 
+- **Expo 55** + React Native 0.83 + TypeScript (strict)
 - **Tailwind CSS v4** via Uniwind + **HeroUI Native** component library
 - **Zustand** + **React Query** + **MMKV** for state and storage
 - **Expo Router** file-based routing
 - **Reanimated** + **Gesture Handler** + **Bottom Sheet**
-- **Jest** + **React Testing Library**
+- **Jest** + **React Testing Library** + **Prettier**
 - Full **EAS Build** config (dev / preview / production)
-- Generated **CLAUDE.md**, **DESIGN.md**, and **README.md**
+- **CLAUDE.md**, **DESIGN.md**, and **README.md** included
+- **OfflineBanner** component with NetInfo
 - Utility scripts (image optimization, env syncing)
 - Project-level agent skills auto-installed
+- Local skills: `/add-auth`, `/add-iap` — composable, invoke anytime
 
 ### Laravel Backend (optional)
 
@@ -34,7 +37,18 @@ This skill makes choices so you don't have to. It's built for developers who lov
 
 ### Optional Integrations
 
-- **RevenueCat** — in-app purchases and subscriptions
+- **RevenueCat** — in-app purchases and subscriptions (via `/add-iap` skill)
+- **Sanctum Auth** — full auth flow with login screen (via `/add-auth` skill)
+
+## Architecture
+
+The skill separates concerns into three layers:
+
+1. **Chat context** — gather parameters from the user (questions, confirmation)
+2. **Shell scripts** — deterministic scaffolding (clone boilerplate, sed replacements, CLI commands)
+3. **Agents** — intelligent generation (DESIGN.md from vibe, CLAUDE.md customization, global.css colors)
+
+The Expo app is cloned from [robin7331/expo-boilerplate](https://github.com/robin7331/expo-boilerplate) — a standalone, runnable boilerplate repo. The skill customizes it post-clone.
 
 ## Installation
 
@@ -82,21 +96,27 @@ Then it scaffolds everything and you're ready to `npm start`.
 ```
 my-cool-app/
 ├── src/
-│   ├── app/              # Expo Router file-based routes
-│   │   ├── _layout.tsx   # Provider hierarchy (wired up)
-│   │   └── index.tsx     # Starter screen
-│   ├── features/         # Feature modules go here
-│   ├── components/       # Shared components
-│   ├── hooks/            # Custom hooks
+│   ├── app/
+│   │   ├── _layout.tsx       # Provider hierarchy (wired up)
+│   │   └── index.tsx          # Starter screen
+│   ├── features/              # Feature modules go here
+│   ├── components/
+│   │   └── offline-banner.tsx # NetInfo offline indicator
+│   ├── hooks/
 │   ├── lib/
-│   │   ├── cn.ts         # clsx + tailwind-merge
-│   │   ├── storage.ts    # MMKV wrapper
-│   │   └── query.tsx     # React Query + NetInfo
-│   └── global.css        # Tailwind + design tokens
+│   │   ├── cn.ts              # clsx + tailwind-merge
+│   │   ├── storage.ts         # MMKV wrapper
+│   │   └── query.tsx          # React Query + NetInfo
+│   └── global.css             # Tailwind + design tokens
 ├── scripts/
+│   ├── add-auth.sh            # Invoke via /add-auth
+│   ├── add-iap.sh             # Invoke via /add-iap
 │   ├── sync-production-env.sh
 │   └── optimize-images.sh
-├── assets/images/
+├── templates/auth/            # Auth file templates
+├── .claude/skills/            # Local agent skills
+│   ├── add-auth/SKILL.md
+│   └── add-iap/SKILL.md
 ├── app.config.ts
 ├── eas.json
 ├── env.ts
@@ -109,42 +129,35 @@ my-cool-app/
 
 ### With Laravel Backend
 
+Same as above, plus auth files added automatically:
+
 ```
-my-cool-app/                    # Expo app
+my-cool-app/
 ├── src/
 │   ├── app/
-│   │   ├── _layout.tsx         # Auth-aware provider hierarchy
-│   │   ├── index.tsx           # Home screen
-│   │   └── login.tsx           # Login screen (works out of the box)
+│   │   ├── _layout.tsx        # Auth-aware with AuthGuard
+│   │   ├── index.tsx
+│   │   └── login.tsx          # Login screen (works out of the box)
 │   ├── features/
-│   │   └── auth/               # Full auth client
-│   │       ├── api.ts          # login / register / logout / getUser
-│   │       ├── store.ts        # Zustand + MMKV auth state
-│   │       └── types.ts        # User, AuthResponse types
+│   │   └── auth/              # Full auth client
+│   │       ├── api.ts         # login / register / logout / getUser
+│   │       ├── store.ts       # Zustand + MMKV auth state
+│   │       └── types.ts       # User, AuthResponse types
 │   ├── lib/
-│   │   ├── api.ts              # Fetch wrapper with Bearer token
-│   │   ├── cn.ts
-│   │   ├── storage.ts
-│   │   └── query.tsx
+│   │   ├── api.ts             # Fetch wrapper with Bearer token
+│   │   └── ...
 │   └── ...
-├── CLAUDE.md                   # References backend at ../{slug}-backend/
 └── ...
 
-my-cool-app-backend/            # Laravel app
+my-cool-app-backend/           # Laravel app
 ├── app/Http/Controllers/Api/V1/
-│   └── AuthController.php      # Sanctum token auth
-├── routes/
-│   ├── api.php                 # /api/v1/auth/* endpoints
-│   └── web.php                 # Admin dashboard routes
-├── resources/js/components/
-│   ├── app-sidebar.tsx         # Sidebar with Pulse & Telescope
-│   └── nav-footer.tsx          # Footer nav component
+│   └── AuthController.php     # Sanctum token auth
+├── routes/api.php             # /api/v1/auth/* endpoints
 ├── .ai/guidelines/
-│   └── companion-app.md        # AI cross-reference to Expo app
-├── docs/
-│   └── api-specs.md            # API contract (source of truth)
-├── AGENTS.md                   # Generated by Laravel Boost
-├── CLAUDE.md                   # Generated by Laravel Boost
+│   └── companion-app.md       # AI cross-reference to Expo app
+├── docs/api-specs.md          # API contract (source of truth)
+├── AGENTS.md                  # Generated by Laravel Boost
+├── CLAUDE.md                  # Generated by Laravel Boost
 └── ...
 ```
 
@@ -152,16 +165,13 @@ my-cool-app-backend/            # Laravel app
 
 ```
 create-expo-app/
-├── SKILL.md                            # Interactive workflow instructions
+├── SKILL.md                           # Interactive workflow (v3.0)
 ├── scripts/
-│   ├── sync-production-env.sh          # Template copied into projects
-│   └── optimize-images.sh              # Template copied into projects
+│   ├── scaffold-expo.sh               # Clone boilerplate + sed placeholders
+│   └── scaffold-laravel.sh            # laravel new + artisan + composer
 └── references/
-    ├── wiring-guide.md                 # Expo config file templates
-    ├── laravel-guide.md                # Laravel scaffolding guide
-    ├── auth-guide.md                   # Expo auth client templates
-    ├── CLAUDE-TEMPLATE.md              # CLAUDE.md template
-    └── DESIGN-TEMPLATE.md              # DESIGN.md template
+    ├── laravel-guide.md               # Laravel code modification templates
+    └── DESIGN-TEMPLATE.md             # DESIGN.md structure reference
 ```
 
 ## License
