@@ -54,8 +54,8 @@ A standalone, runnable Expo boilerplate that works out of the box (`git clone` �
 
 **After (v3):** ~200 lines of orchestration in SKILL.md.
 - `scaffold-expo.sh` — clones boilerplate, sed-replaces placeholders, npm install, installs agent skills, git init
-- `scaffold-laravel.sh` — runs `laravel new`, `php artisan install:api`, installs Pulse/Telescope/Boost
-- Agent only handles: DESIGN.md from vibe, global.css colors, CLAUDE.md append, README.md generation
+- `scaffold-laravel.sh` — clones laravel-boilerplate, sed-replaces placeholders, composer/npm install, boost:install, git init
+- Agent only handles: DESIGN.md from vibe, global.css colors, CLAUDE.md append, README.md generation, docs/api-specs.md
 - Auth and IAP handled by auto-invoking `/add-auth` and `/add-iap` scripts
 
 **Removed files (now in boilerplate):**
@@ -67,10 +67,8 @@ A standalone, runnable Expo boilerplate that works out of the box (`git clone` �
 
 **Remaining files:**
 - `SKILL.md` — orchestration (questions → scripts → agents)
-- `scripts/scaffold-expo.sh` — clone + customize boilerplate
-- `scripts/scaffold-laravel.sh` — Laravel CLI commands
-- `references/laravel-guide.md` — code templates for Laravel modifications
-- `references/DESIGN-TEMPLATE.md` — structure reference for DESIGN.md generation
+- `scripts/scaffold-expo.sh` — clone + customize expo-boilerplate
+- `scripts/scaffold-laravel.sh` — clone + customize laravel-boilerplate
 
 ---
 
@@ -89,18 +87,18 @@ A standalone, runnable Expo boilerplate that works out of the box (`git clone` �
   - Final app runs with `npm run ios`
 
 - [ ] **Test the Laravel flow end-to-end** — verify:
-  - scaffold-laravel.sh creates the Laravel app with correct flags
-  - Agent creates AuthController, routes, seeder correctly
-  - Agent wires Pulse/Telescope into sidebar
+  - scaffold-laravel.sh clones and customizes correctly
+  - add-sanctum-api.sh installs Sanctum, copies AuthController + routes, migrates
+  - add-pulse-telescope.sh installs Pulse/Telescope, wires sidebar
   - Agent generates docs/api-specs.md from actual routes
-  - Cross-project references work (CLAUDE.md in both projects)
+  - Cross-project references work (companion-app guideline in both projects)
   - Login works: Expo app → Laravel API → token → authenticated
 
 ### Medium Priority
 
-- [ ] **Create a Laravel boilerplate repo** — same pattern as expo-boilerplate. Move deterministic Laravel setup (AuthController, API routes, seeder, production safety, companion-app guideline) into a cloneable repo with local skills. Would further reduce LLM context usage for Laravel scaffolding.
+- [x] **Create a Laravel boilerplate repo** — `robin7331/expo-boilerplate-laravel-backend`. Laravel 13 + React starter kit with Boost pre-configured. Deterministic setup (production safety, NavFooter, test user seeder, phpunit disables) baked in. Local skills: `/add-sanctum-api` (AuthController, routes, gates, migrate), `/add-pulse-telescope` (install, publish, sidebar wiring). Custom guideline: `.ai/guidelines/companion-app.md` with `__APP_SLUG__` placeholder. `scaffold-laravel.sh` rewritten to clone this repo instead of running `laravel new`. `references/laravel-guide.md` removed (now in boilerplate).
 
-- [ ] **DESIGN-TEMPLATE.md redundancy** — the boilerplate already ships with DESIGN.md. The template is only used as a structural reference for the agent when regenerating from vibe. Consider whether the agent can just read the existing DESIGN.md and update values instead of referencing a separate template.
+- [x] **DESIGN-TEMPLATE.md redundancy** — removed. The agent now reads the existing DESIGN.md from the boilerplate and updates values based on the user's vibe, instead of generating from a separate template. Both boilerplates (Expo and Laravel) ship with their own DESIGN.md with neutral defaults.
 
 - [ ] **scaffold-expo.sh portability** — currently uses `sed -i ''` (macOS). Won't work on Linux. Consider using `sed -i` without the empty string arg, or use a different approach for cross-platform compat.
 
