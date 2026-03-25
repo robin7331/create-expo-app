@@ -37,12 +37,12 @@ cd "$SLUG"
 echo "Customizing for '$APP_NAME'..."
 
 # app.config.ts
-sed -i '' "s|__APP_NAME__|${APP_NAME}|g" app.config.ts
-sed -i '' "s|__SLUG__|${SLUG}|g" app.config.ts
-sed -i '' "s|__BUNDLE_ID__|${BUNDLE_ID}|g" app.config.ts
+sed -i '' "s|Expo Boilerplate|${APP_NAME}|g" app.config.ts
+sed -i '' "s|expo-boilerplate|${SLUG}|g" app.config.ts
+sed -i '' "s|com.example.expoboilerplate|${BUNDLE_ID}|g" app.config.ts
 
 # env.ts
-sed -i '' "s|__API_URL__|${API_URL}|g" env.ts
+sed -i '' "s|http://localhost:3000|${API_URL}|g" env.ts
 
 # package.json — update name field
 sed -i '' "s|\"name\": \"expo-boilerplate\"|\"name\": \"${SLUG}\"|" package.json
