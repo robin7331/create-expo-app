@@ -170,18 +170,25 @@ The DESIGN.md should include:
 
 After generating DESIGN.md, update `src/global.css` in the project to replace the default color values with the OKLCH values from DESIGN.md. The `@theme` and `@layer theme` blocks must match DESIGN.md exactly.
 
-### 3.6 Generate CLAUDE.md (Agent)
+### 3.6 Update CLAUDE.md (Agent)
 
-Read [references/CLAUDE-TEMPLATE.md](references/CLAUDE-TEMPLATE.md) for the template.
+The boilerplate already ships with a complete CLAUDE.md covering the stack, patterns, and conventions. Read the existing `CLAUDE.md` in the project, then **append** sections based on the user's choices. Do NOT regenerate the whole file.
 
-Generate a CLAUDE.md tailored to the project. Fill in:
-- Actual app name, slug, and technology stack
-- The real project structure
-- All npm scripts
-- Key patterns (features, routes, forms, data fetching, state, styling, storage)
-- Essential rules
-- Backend API section (if backend was selected — see the template for Laravel-specific and generic variants)
-- Reference to DESIGN.md for design tokens
+**If Laravel backend was selected**, append a "Backend API (Laravel)" section with:
+- Backend location: `../{backendSlug}/`
+- Cross-project workflows ("check the backend" → navigate to `../{backendSlug}/`)
+- API contract location: `../{backendSlug}/docs/api-specs.md`
+- API base URL: `http://{backendSlug}.test`
+- Auth details (if Sanctum: token stored in MMKV, attached via `src/lib/api.ts`, auth logic in `src/features/auth/`)
+- Convention: snake_case on the wire, map to camelCase at API boundary
+
+**If non-Laravel backend was selected**, append a "Backend API" section with:
+- API base URL from user's answer
+- Convention: all API responses return JSON, snake_case → camelCase at boundary
+
+**If IAP was selected**, append RevenueCat to the technology stack list.
+
+**Always**, update the project structure in CLAUDE.md if auth added `lib/api.ts` or `features/auth/`.
 
 ### 3.7 Generate README.md (Agent)
 
